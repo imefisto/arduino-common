@@ -23,9 +23,11 @@ bool AccessPointManager::start() {
 }
 
 void AccessPointManager::stop() {
-    server.end();
-    WiFi.softAPdisconnect(true);
-    started = false;
+    if (started) {
+        server.end();
+        WiFi.softAPdisconnect(true);
+        started = false;
+    }
 }
 
 void AccessPointManager::setupWebServer() {
