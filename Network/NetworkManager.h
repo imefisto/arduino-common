@@ -13,7 +13,6 @@
 #include <PubSubClient.h>
 #include "WiFiCredentials.h"
 
-// 
 class NetworkManager {
     private:
         WiFiClientSecure& wiFiClient;
@@ -25,16 +24,17 @@ class NetworkManager {
         uint8_t dst;
 
     public:
+        using ClientCallback = std::function<void(char*, byte*, unsigned int)>;
+
         NetworkManager(WiFiClientSecure& net, const char* thingName, int8_t timeZone, uint8_t dst);
-        void configure(WiFiCredentials creds);
+        void configureWiFi(WiFiCredentials creds);
         bool connectToWiFi();
         void syncTimeWithNTP();
-        void configureMQTT(const char *mqttHost, int mqttPort); 
+        void configureMQTT(const char *mqttHost, int mqttPort, ClientCallback callback);
         bool connectToMQTT();
         bool loop();
         bool isConnected() { return client.connected(); }
         bool publish(const char* topic, const char* payload);
-        void setCallback(void (*callback)(char*, byte*, unsigned int));
 };
 
 #endif

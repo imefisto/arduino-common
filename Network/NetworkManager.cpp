@@ -9,7 +9,7 @@ NetworkManager::NetworkManager(WiFiClientSecure& net, const char* thingName, int
 {
 }
 
-void NetworkManager::configure(WiFiCredentials creds)
+void NetworkManager::configureWiFi(WiFiCredentials creds)
 {
     ssid = creds.ssid;
     password = creds.password;
@@ -42,8 +42,9 @@ void NetworkManager::syncTimeWithNTP() {
     }
 }
 
-void NetworkManager::configureMQTT(const char *mqttHost, int mqttPort) {
+void NetworkManager::configureMQTT(const char *mqttHost, int mqttPort, ClientCallback callback) {
     client.setServer(mqttHost, mqttPort);
+    client.setCallback(callback);
 }
 
 bool NetworkManager::connectToMQTT() {
@@ -71,8 +72,4 @@ bool NetworkManager::loop() {
 
 bool NetworkManager::publish(const char* topic, const char* payload) {
     return client.publish(topic, payload);
-}
-
-void NetworkManager::setCallback(void (*callback)(char*, byte*, unsigned int)) {
-    client.setCallback(callback);
 }
