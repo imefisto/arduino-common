@@ -9,32 +9,38 @@
 
 class ButtonHandler {
     public:
-        using Callback = std::function<void(void)>;
-
-        ButtonHandler(uint8_t pin, Callback callback, unsigned long debounceTime = 3000UL)
-            : pin(pin), callback(callback), debounceTime(debounceTime) {}
+        ButtonHandler(uint8_t p, unsigned long debounceMs = 250) 
+            : pin(p), debounceTime(debounceMs), lastInterruptTime(0), buttonPressed(false) {}
 
         void setup();
+        void process();
+
+    protected:
+        volatile bool buttonPressed;
+        virtual void handleAction() {}
 
     private:
-        static void ICACHE_RAM_ATTR handleInterrupt(void* arg) {
-            uint8_t isrPin = static_cast<uint8_t>(reinterpret_cast<uint32_t>(arg));
-            auto instance = instances[isrPin];
-            if (!instance) return;
-
+        IRAM_ATTR static void classIsr(void *p) {
+            ButtonHandler *ptr = (ButtonHandler*) p;
+            ptr->instanceIsr();
+        }
+    
+        IRAM_ATTR virtual void instanceIsr() {
             unsigned long now = millis();
-            if (now - instance->lastInterruptTime > instance->debounceTime) {
-                instance->callback();
-                instance->lastInterruptTime = now;
+            if (now - lastInterruptTime > debounceTime) {
+                handleButtonPress();
             }
+
+            lastInterruptTime = now;
         }
 
+        IRAM_ATTR virtual void handleButtonPress() {
+            buttonPressed = true;
+        }
+    
         uint8_t pin;
-        Callback callback;
-        unsigned long debounceTime;
-        unsigned long lastInterruptTime = 0;
-
-        static std::map<uint8_t, ButtonHandler*> instances;
+        const unsigned long debounceTime;
+        unsigned long lastInterruptTime;
 };
 
 #endif
