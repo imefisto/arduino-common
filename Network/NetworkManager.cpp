@@ -62,7 +62,7 @@ bool NetworkManager::connectToMQTT() {
 }
 
 bool NetworkManager::loop() {
-    if (!connectToMQTT()) {
+    if (!client.connected()) {
         return false;
     }
 
