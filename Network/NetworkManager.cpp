@@ -16,6 +16,8 @@ void NetworkManager::configureWiFi(WiFiCredentials creds)
 }
 
 bool NetworkManager::connectToWiFi() {
+    if (WiFi.status() == WL_CONNECTED) return true;
+
 #ifdef ESP32
     WiFi.setHostname(thingName.c_str());
 #else
@@ -45,6 +47,7 @@ void NetworkManager::syncTimeWithNTP() {
 void NetworkManager::configureMQTT(const char *mqttHost, int mqttPort, ClientCallback callback) {
     client.setServer(mqttHost, mqttPort);
     client.setCallback(callback);
+    client.setKeepAlive(60);
 }
 
 bool NetworkManager::connectToMQTT() {
