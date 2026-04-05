@@ -47,7 +47,7 @@ void NetworkManager::syncTimeWithNTP() {
 void NetworkManager::configureMQTT(const char *mqttHost, int mqttPort, ClientCallback callback) {
     client.setServer(mqttHost, mqttPort);
     client.setCallback(callback);
-    client.setKeepAlive(60);
+    client.setKeepAlive(15);
 }
 
 bool NetworkManager::connectToMQTT() {
