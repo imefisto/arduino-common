@@ -83,10 +83,10 @@ void ConnectionCoordinator::_tryConnect() {
     _credManager.saveCredentials(_creds);
     _netManager.syncTimeWithNTP();
 
-    while (!_netManager.connectToMQTT()) {
-        Serial.println("MQTT connect failed. Retrying in 5s...");
-        if (_onIdle) _onIdle();
-        delay(MQTT_RETRY_DELAY_MS);
+    if (!_netManager.connectToMQTT()) {
+        Serial.println("MQTT connect failed. Retrying in 30s...");
+        _state = ST_OFFLINE_WAIT;
+        return;
     }
 
     _state = ST_CONNECTED;
