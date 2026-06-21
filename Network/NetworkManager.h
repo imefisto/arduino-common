@@ -1,7 +1,10 @@
-#ifndef NETWORKMANAGER_H
-#define NETWORKMANAGER_H
+#ifndef NETWORK_MANAGER_H
+#define NETWORK_MANAGER_H
 
+#include <functional>
 #include <string>
+#include <WiFiClientSecure.h>
+#include <PubSubClient.h>
 #ifdef ESP32
 #include <WiFi.h>
 #elif defined(ESP8266)
@@ -9,32 +12,56 @@
 #else
 #error Platform not supported
 #endif
-#include <WiFiClientSecure.h>
-#include <PubSubClient.h>
-#include "WiFiCredentials.h"
+#include "../WiFiCredentials/WiFiCredentials.h"
+#include "../WiFiCredentials/WiFiCredentialsManager.h"
+#include "../WiFiCredentials/AccessPointManager.h"
 
 class NetworkManager {
-    private:
-        WiFiClientSecure& wiFiClient;
-        PubSubClient client;
-        std::string ssid;
-        std::string password;
-        std::string thingName;
-        int8_t timeZone;
-        uint8_t dst;
+public:
+    using MqttCallback = std::function<void(char*, byte*, unsigned int)>;
 
-    public:
-        using ClientCallback = std::function<void(char*, byte*, unsigned int)>;
+    NetworkManager(const char* thingName,
+                   const char* mqttHost, int mqttPort,
+                   const char* caCert, const char* clientCert, const char* privateKey,
+                   int8_t timeZone, uint8_t dst);
 
-        NetworkManager(WiFiClientSecure& net, const char* thingName, int8_t timeZone, uint8_t dst);
-        void configureWiFi(WiFiCredentials creds);
-        bool connectToWiFi();
-        void syncTimeWithNTP();
-        void configureMQTT(const char *mqttHost, int mqttPort, ClientCallback callback);
-        bool connectToMQTT();
-        bool loop();
-        bool isConnected() { return client.connected(); }
-        bool publish(const char* topic, const char* payload);
+    void begin(MqttCallback callback);
+    void loop();
+
+    bool isConnected() const { return _client.connected(); }
+    bool publish(const char* topic, const char* payload);
+    void clearCredentials() { _credManager.clearCredentials(); }
+
+private:
+    enum State { ST_BOOT, ST_TRY_CONNECT, ST_CONNECTED, ST_AP_MODE, ST_OFFLINE_WAIT };
+
+    void _tryConnect();
+    void _enterAPMode();
+    bool _connectWiFi();
+    void _syncNTP();
+
+    const char* _thingName;
+    const char* _mqttHost;
+    int         _mqttPort;
+    int8_t      _timeZone;
+    uint8_t     _dst;
+
+    BearSSL::X509List   _ca;
+    BearSSL::X509List   _crt;
+    BearSSL::PrivateKey _key;
+
+    WiFiClientSecure _net;
+    PubSubClient     _client;
+
+    WiFiCredentialsManager _credManager;
+    AccessPointManager     _apManager;
+    WiFiCredentials        _creds;
+
+    MqttCallback  _callback;
+    State         _state;
+    unsigned long _stateStart;
+
+    static const unsigned long OFFLINE_RETRY_MS = 30000UL;
 };
 
 #endif
