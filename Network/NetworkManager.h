@@ -28,7 +28,7 @@ public:
     void begin(MqttCallback callback);
     void loop();
 
-    bool isConnected() const { return _client.connected(); }
+    bool isConnected() { return _client.connected(); }
     bool publish(const char* topic, const char* payload);
     void clearCredentials() { _credManager.clearCredentials(); }
 
